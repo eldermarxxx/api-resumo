@@ -15,8 +15,12 @@ load_dotenv()
 app = Flask(__name__)
 CORS(app)
 
-# Inicializar cliente OpenAI com versão mais recente
-openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+# Inicializar cliente OpenAI com versão compatível
+api_key = os.getenv("OPENAI_API_KEY")
+if not api_key:
+    print("AVISO: Chave da API OpenAI não encontrada! Verifique a variável de ambiente OPENAI_API_KEY.")
+    
+openai_client = OpenAI(api_key=api_key)
 
 def baixar_arquivo(url):
     """Baixa um arquivo a partir de uma URL"""
