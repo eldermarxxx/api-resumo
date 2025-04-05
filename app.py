@@ -51,7 +51,7 @@ def extrair_texto_pdf(content):
         raise Exception(f"Erro ao extrair texto do PDF: {str(e)}")
 
 def resumir_texto(texto):
-    """Utiliza a API da OpenAI para resumir o texto"""
+    """Utiliza a API da OpenAI para analisar e resumir extratos bancários"""
     try:
         if len(texto) > 15000:
             texto = texto[:15000]  # Limitar tamanho para evitar tokens excessivos
@@ -59,22 +59,60 @@ def resumir_texto(texto):
         response = openai_client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": "system", "content": "Você é um assistente especializado em criar resumos concisos e informativos de documentos."},
-                {"role": "user", "content": f"Por favor, crie um resumo detalhado do seguinte texto, destacando os pontos principais e mantendo as informações mais relevantes:\n\n{texto}"}
+                {
+                    "role": "system", 
+                    "content": """Você é um analista financeiro especializado em extratos bancários.
+                    Sua tarefa é analisar extratos bancários e criar relatórios detalhados usando formatação markdown.
+                    Identifique e categorize todas as transações, destacando entradas, saídas, tarifas bancárias e outros movimentos relevantes.
+                    Faça cálculos precisos de totais e saldos.
+                    Ao final, apresente uma avaliação da saúde financeira baseada nos padrões de gastos, receitas e saldo, 
+                    com recomendações práticas e específicas para melhorar a gestão financeira."""
+                },
+                {
+                    "role": "user", 
+                    "content": f"""Analise detalhadamente o seguinte extrato bancário e crie um relatório completo em formato markdown:
+
+1. Comece com um título e resumo geral das informações do extrato (período, conta, instituição bancária, etc);
+
+2. Detalhe todas as ENTRADAS (créditos, depósitos, transferências recebidas, etc) em uma tabela organizada com data, descrição e valor;
+
+3. Detalhe todas as SAÍDAS (débitos, pagamentos, transferências enviadas, etc) categorizadas (exemplo: alimentação, transporte, moradia) em uma tabela organizada com data, descrição, categoria e valor;
+
+4. Liste todas as TARIFAS bancárias cobradas separadamente;
+
+5. Apresente um RESUMO FINANCEIRO com:
+   - Total de entradas
+   - Total de saídas
+   - Total de tarifas
+   - Saldo inicial e final
+   - Diferença entre entradas e saídas
+   - Maiores despesas por categoria
+   - Gráfico de distribuição de gastos (representado em markdown)
+
+6. Finalize com uma ANÁLISE DE SAÚDE FINANCEIRA detalhada que inclua:
+   - Indicadores de saúde financeira
+   - Pontos positivos identificados
+   - Pontos críticos ou de atenção
+   - Sugestões práticas e específicas para melhorar a gestão financeira
+   - Previsões para os próximos meses se mantido o mesmo padrão
+
+Extrato bancário:
+{texto}"""
+                }
             ],
-            max_tokens=1000
+            max_tokens=1500
         )
         
         return response.choices[0].message.content
     except Exception as e:
-        raise Exception(f"Erro ao resumir o texto com OpenAI: {str(e)}")
+        raise Exception(f"Erro ao analisar o extrato bancário com OpenAI: {str(e)}")
 
 @app.route('/', methods=['GET'])
 def index():
     """Rota principal com instruções de uso da API"""
     return jsonify({
-        "api": "API de Resumo de PDF com OpenAI",
-        "descricao": "Esta API permite gerar resumos de documentos PDF utilizando o modelo GPT da OpenAI",
+        "api": "API de Análise de Extratos Bancários com OpenAI",
+        "descricao": "Esta API permite analisar extratos bancários em PDF e gerar relatórios detalhados utilizando IA",
         "endpoints": {
             "/status": {
                 "metodo": "GET",
@@ -82,13 +120,13 @@ def index():
             },
             "/resumir": {
                 "metodo": "POST",
-                "descricao": "Recebe a URL de um PDF, baixa o arquivo, extrai o texto e gera um resumo",
+                "descricao": "Recebe a URL de um PDF de extrato bancário, baixa o arquivo, extrai o texto e gera uma análise detalhada",
                 "parametros": {
-                    "url": "URL do arquivo PDF a ser resumido"
+                    "url": "URL do arquivo PDF do extrato bancário a ser analisado"
                 },
                 "exemplo": {
                     "requisicao": {
-                        "url": "https://exemplo.com/documento.pdf"
+                        "url": "https://exemplo.com/extrato-bancario.pdf"
                     }
                 }
             }
